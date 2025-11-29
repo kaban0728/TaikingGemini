@@ -2,47 +2,182 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; padding: 10px; width: 300px; }
+    /* 画面全体設定 */
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      font-family: sans-serif; 
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      width: 100%;
+    }
+
+    /* ヘッダーエリア */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px; /* 少し間隔を空ける */
+    }
+    h3 { margin: 0; }
+
+    /* アイコンボタン */
+    .icon-btn {
+      background: none;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 4px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover { background-color: #f0f0f0; }
+    .icon-btn .material-icons { font-size: 20px; }
+
+    /* 「現在の話題:」ラベル */
+    .topic-label {
+      font-size: 0.75em;
+      color: #666;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+
+    /* ページ情報表示エリア */
+    #page-info {
+      display: flex;
+      align-items: center;
+      background-color: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+    #page-favicon {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .page-details {
+      overflow: hidden;
+      flex: 1;
+    }
+    #page-title {
+      font-size: 0.85em;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #333;
+    }
+    #page-url {
+      font-size: 0.7em;
+      color: #888;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ツールエリア */
+    #tools-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 10px;
+      gap: 5px;
+    }
     
+    #model-container { flex: 1; }
+    label { font-size: 0.8em; color: #666; display: block; margin-bottom: 4px;}
+    select { width: 100%; box-sizing: border-box; padding: 4px; }
+
+    #export-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+    #export-btn:hover { background-color: #45a049; }
+    #export-btn .material-icons { font-size: 24px; }
+    
+    /* チャット履歴エリア */
     #chat-history { 
-      height: 380px; /* 入力欄が減った分、少し広げました */
+      flex: 1;
       overflow-y: scroll; 
       border: 1px solid #ccc; 
       margin-bottom: 10px; 
       padding: 5px; 
       background-color: #fff;
+      min-height: 150px;
     }
     
     .message { margin-bottom: 8px; padding: 8px; border-radius: 6px; font-size: 0.9em; line-height: 1.4; }
-    .user { background-color: #e3f2fd; text-align: right; margin-left: 20px; }
+    .user { background-color: #e3f2fd; margin-left: 20px; }
     .ai { background-color: #f5f5f5; margin-right: 20px; }
     
-    input, button, select { width: 100%; margin-bottom: 8px; box-sizing: border-box; padding: 8px; }
+    /* 入力エリア */
+    #input-area { margin-bottom: 5px; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 5px; }
     
-    /* モデル選択エリア */
-    #model-section { margin-bottom: 10px; }
-    label { font-size: 0.8em; color: #666; display: block; margin-bottom: 4px;}
-    
-    #send-btn { background-color: #0b57d0; color: white; border: none; cursor: pointer; font-weight: bold; }
+    #send-btn { 
+      width: 100%; 
+      background-color: #0b57d0; 
+      color: white; 
+      border: none; 
+      padding: 10px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      border-radius: 4px;
+    }
     #send-btn:hover { background-color: #0842a0; }
   </style>
 </head>
 <body>
-  <h3>Gemini Page Chat</h3>
+  <div class="header-row">
+    <h3>Gemini Page Chat</h3>
+    <button id="reload-btn" class="icon-btn" title="アクティブなタブを再読み込み">
+      <span class="material-icons">refresh</span>
+    </button>
+  </div>
+
+  <div class="topic-label">現在の話題:</div>
+
+  <div id="page-info" style="display:none;">
+    <img id="page-favicon" src="" alt="">
+    <div class="page-details">
+      <div id="page-title"></div>
+      <div id="page-url"></div>
+    </div>
+  </div>
   
-  <div id="model-section">
-    <label for="model-select">モデルを選択:</label>
-    <select id="model-select">
-      <option value="fast">Fast (Gemini 2.5 Flash)</option>
-      <option value="pro">Pro (Gemini 2.5 Pro)</option>
-    </select>
+  <div id="tools-section">
+    <div id="model-container">
+      <label for="model-select">モデルを選択:</label>
+      <select id="model-select">
+        <option value="fast">Fast (Gemini 2.5 Flash)</option>
+        <option value="pro">Pro (Gemini 2.5 Pro)</option>
+      </select>
+    </div>
+    <button id="export-btn" class="icon-btn" title="会話を保存">
+      <span class="material-icons">save</span>
+    </button>
   </div>
 
   <div id="chat-history"></div>
   
-  <input type="text" id="user-input" placeholder="ページについて質問...">
-  <button id="send-btn">送信</button>
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="質問を入力 (Ctrl+Enterで送信)...">
+    <button id="send-btn">送信</button>
+  </div>
 
   <script src="config.js"></script>
   <script src="sidepanel.js"></script>
